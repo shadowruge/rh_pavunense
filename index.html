@@ -128,40 +128,90 @@
         <div id="message" class="loading">Iniciando câmera...</div>
     </div>
     
-   // Substitua o bloco <script> inteiro pelo código abaixo
-<script>
-    const video = document.getElementById('webcamVideo');
-    const messageDiv = document.getElementById('message');
-    const button = document.getElementById('pointButton');
+    <script>
+        const video = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('photoCanvas');
+        const button = document.getElementById('pointButton');
+        const messageDiv = document.getElementById('message');
+        const employeeNameInput = document.getElementById('employeeName');
+        const employeeRoleInput = document.getElementById('employeeRole');
+        
+        // A URL da sua implantação do Apps Script foi inserida aqui.
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4PNztVWXQSq2SCIS9p97xCFgz5VLsxhktg_d_fXQH4C9OZ6GhvVR-RUsiJypm-5Hj/exec';
 
-    // 1. Apenas tenta iniciar a câmera e dar feedback
-    async function startCamera() {
-        messageDiv.textContent = 'Solicitando acesso à câmera...';
-        button.disabled = true;
-        button.textContent = 'AGUARDE...';
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-            video.play();
-
-            video.onloadedmetadata = () => {
-                messageDiv.textContent = 'Câmera pronta.';
-                messageDiv.classList.add('success');
-                button.disabled = false;
-                button.textContent = 'REGISTRAR PONTO';
-            };
-        } catch (error) {
-            console.error("Erro ao acessar a câmera: ", error);
-            messageDiv.textContent = 'Erro: Câmera não pôde ser iniciada.';
-            messageDiv.classList.add('error');
-            button.disabled = true;
-            button.textContent = 'ERRO';
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    button.disabled = false;
+                    button.textContent = 'REGISTRAR PONTO';
+                    messageDiv.textContent = '';
+                };
+            } catch (error) {
+                console.error("Erro ao acessar a câmera: ", error);
+                messageDiv.textContent = 'Não foi possível acessar a câmera. Verifique as permissões.';
+                messageDiv.classList.add('error');
+                button.disabled = true;
+                button.textContent = 'ERRO';
+            }
         }
-    }
 
-    // Chama a função ao carregar a página
-    startCamera();
-</script>
+        button.addEventListener('click', () => {
+            const employeeName = employeeNameInput.value.trim();
+            const employeeRole = employeeRoleInput.value.trim();
+
+            if (!employeeName || !employeeRole) {
+                messageDiv.textContent = 'Por favor, preencha o nome e o cargo.';
+                messageDiv.classList.remove('success');
+                messageDiv.classList.add('error');
+                return;
+            }
+
+            messageDiv.textContent = 'Registrando ponto...';
+            messageDiv.classList.remove('success', 'error');
+            button.disabled = true;
+
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const image = canvas.toDataURL('image/png');
+            const dateLocal = new Date().toLocaleString('pt-BR');
+            
+            const data = {
+                image: image,
+                date: dateLocal,
+                employeeName: employeeName,
+                employeeRole: employeeRole
+            };
+            
+            fetch(APP_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(() => {
+                messageDiv.textContent = 'Ponto registrado com sucesso!';
+                messageDiv.classList.add('success');
+                employeeNameInput.value = '';
+                employeeRoleInput.value = '';
+                button.disabled = false;
+            })
+            .catch(error => {
+                console.error('Erro ao enviar dados:', error);
+                messageDiv.textContent = 'Ocorreu um erro ao registrar o ponto. Tente novamente.';
+                messageDiv.classList.add('error');
+                button.disabled = false;
+            });
+        });
+
+        startCamera();
+    </script>
 </body>
 </html>
