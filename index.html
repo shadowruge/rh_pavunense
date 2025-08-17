@@ -1,102 +1,98 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registro de Funcionários</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <style>
-    #map { height: 300px; width: 100%; margin-top: 20px; border-radius: 10px; }
-    form { margin-top: 20px; }
-    input, button { display: block; margin: 10px 0; padding: 8px; width: 100%; }
-    button { background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background-color: #45a049; }
-  </style>
+    <meta content="text/html; charset=UTF-8" />
+    <title>.::-|Controle de ponto|-::.</title>
 </head>
+<style>
+    * {
+        border: 0px;
+        margin: 0px;
+    }
+
+    body {
+        color: #000c0c;
+        background-color: #aaeeec;
+    }
+
+    header {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .box {
+        padding: 49px;
+        margin-top: 10px;
+        width: 225px;
+        height: 225px;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 50%;
+        background-color: #d2f0fa;
+    }
+
+    .box0 {
+        padding: 59px;
+        position: relative;
+       
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    button{
+        background-color: #002c8b;
+        color: #f8ffff;
+        border-radius: 5px;
+        width: 100px;
+        height: 30px;
+    }
+</style>
+
 <body>
-  <h1>Registro de Funcionários</h1>
+    <header>
+        <h2>Controle de ponto</h2>
+    </header>
+    <div class="box">
+        <div class="box0">
+            <video src=""></video>
+            <canvas></canvas>
+            <button class="button" type="button">PONTO</button>
+          
+        </div>
+        
+    </div>
+    
+    <script>
+    const video = document.querySelector('video');
+    
+    navigator.mediaDevices.getUserMedia({video: true})
+    .then(stream => {
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch(error => {
+        console.log(error);
+    })
 
-  <form id="form">
-    <input type="text" id="nome" placeholder="Nome" required aria-label="Nome">
-    <input type="text" id="matricula" placeholder="Matrícula" required aria-label="Matrícula">
-    <input type="text" id="funcao" placeholder="Função" required aria-label="Função">
-    <button type="submit">Salvar</button>
-  </form>
-
-  <p id="localizacao">Buscando localização...</p>
-  <div id="map"></div>
-
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    let latitude = null;
-    let longitude = null;
-
-    const localizacaoElemento = document.getElementById("localizacao");
-    const map = L.map('map').setView([0, 0], 2);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    function sucessoCallback(position) {
-      latitude = position.coords.latitude;
-      longitude = position.coords.longitude;
-      localizacaoElemento.textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
-      map.setView([latitude, longitude], 15);
-      L.marker([latitude, longitude]).addTo(map).bindPopup("Você está aqui 📍").openPopup();
-    }
-
-    function erroCallback(error) {
-      localizacaoElemento.textContent = "Erro ao obter localização: " + error.message;
-    }
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(sucessoCallback, erroCallback, { enableHighAccuracy: true });
-    }
-
-    // Envio para Google Sheets
-    document.getElementById("form").addEventListener("submit", function(e) {
-      e.preventDefault();
-
-      if (latitude === null || longitude === null) {
-        alert("Localização não disponível. Por favor, tente novamente.");
-        return;
-      }
-
-      const data = {
-        nome: document.getElementById("nome").value,
-        matricula: document.getElementById("matricula").value,
-        funcao: document.getElementById("funcao").value,
-        latitude: latitude,
-        longitude: longitude
-      };
-
-      fetch("https://script.google.com/macros/s/AKfycbyiGMLYsUNrVXzORKVJIY5_5QZsp4vwcjDUd9ctVfs/dev", {
-        method: "POST",
-        body: JSON.stringify(data)
-      })
-      .then(res => res.text())
-      .then(msg => alert("Dados salvos com sucesso!"))
-      .catch(err => alert("Erro ao salvar: " + err));
+    document.querySelector('button').addEventListener('click', () => {
+        const canvas = document.querySelector('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const image = canvas.toDataURL('image/png');
+        const xhr = new XMLHttpRequest();
+        const dateLocal = new Date();
+        
     });
 
-    function erroCallback(error) {
-  switch(error.code) {
-    case error.PERMISSION_DENIED:
-      localizacaoElemento.textContent = "Erro: Permissão de localização negada. Por favor, ative a geolocalização nas configurações do navegador.";
-      break;
-    case error.POSITION_UNAVAILABLE:
-      localizacaoElemento.textContent = "Erro: Localização indisponível.";
-      break;
-    case error.TIMEOUT:
-      localizacaoElemento.textContent = "Erro: O tempo de solicitação de localização expirou.";
-      break;
-    case error.UNKNOWN_ERROR:
-      localizacaoElemento.textContent = "Erro: Um erro desconhecido ocorreu. Tente novamente mais tarde.";
-      break;
-  }
-}
 
-  </script>
+
+
+    </script>
 </body>
+
 </html>
